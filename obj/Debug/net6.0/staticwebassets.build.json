@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "5P/zU05QS9A+tBueWU6Qv23XbD2jckqJpafXqms7Wgo=",
+  "Source": "taskAPI",
+  "BasePath": "_content/taskAPI",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
