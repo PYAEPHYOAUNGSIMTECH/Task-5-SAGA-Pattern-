@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using taskAPI.Models;
 
 namespace taskAPI.Controllers
@@ -30,6 +32,54 @@ namespace taskAPI.Controllers
           {
               return NotFound();
           }
+            System.Diagnostics.Debug.WriteLine("Startiing consumer");
+            var factory = new ConnectionFactory()
+            {
+                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST"),
+                Port = Convert.ToInt32(Environment.GetEnvironmentVariable("RABBITMQ_PORT"))
+            };
+            using (var connection = factory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(queue: "tasks",
+                                     durable: true,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                var consumer = new AsyncEventingBasicConsumer(channel);
+                consumer.Received += async (model, ea) =>
+                {
+                    System.Diagnostics.Debug.WriteLine("Entering", ea.Body);
+                    var body = ea.Body.ToArray();
+                    System.Diagnostics.Debug.WriteLine(body);
+                    var message = Encoding.UTF8.GetString(body);
+                    System.Diagnostics.Debug.WriteLine(" [x] Received {0}", message);
+                    await Task.Yield();
+                    var taskItem = new TaskItem()
+                    {
+                        
+                        description = message,
+                        priority = "Urgent",
+                        status = "Started",
+                        customerID = 10
+
+                    };
+
+                    _context.TaskItems.Add(taskItem);
+                    await _context.SaveChangesAsync();
+                    CreatedAtAction("GetTaskItem", new { id = taskItem.taskItemID }, taskItem);
+
+
+                };
+                
+            System.Diagnostics.Debug.WriteLine("Starting consumer");
+                channel.BasicConsume(queue: "tasks",
+                                     autoAck: true,
+                                     consumer: consumer);
+
+            }
+           
             return await _context.TaskItems.ToListAsync();
         }
 
@@ -85,7 +135,7 @@ namespace taskAPI.Controllers
         // POST: api/TaskItems
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TaskItem>> PostTaskItem(TaskItem taskItem)
+        public async Task<ActionResult<TaskItem>> PostTaskItem([FromBody] TaskItem taskItem)
         {
           if (_context.TaskItems == null)
           {
@@ -109,7 +159,7 @@ namespace taskAPI.Controllers
                                      autoDelete: false,
                                      arguments: null);
 
-                string message = taskItem.description;
+                string message = JsonConvert.SerializeObject(taskItem);
                 var body = Encoding.UTF8.GetBytes(message);
 
                 channel.BasicPublish(exchange: "",

@@ -9845,11 +9845,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\tp-pyaepa\\source\\repos\\taskAPI\\taskAPI.csproj",
+      "projectUniqueName": "C:\\Users\\tp-pyaepa\\source\\repos\\taskApi-Task2\\taskAPI\\taskAPI.csproj",
       "projectName": "taskAPI",
-      "projectPath": "C:\\Users\\tp-pyaepa\\source\\repos\\taskAPI\\taskAPI.csproj",
+      "projectPath": "C:\\Users\\tp-pyaepa\\source\\repos\\taskApi-Task2\\taskAPI\\taskAPI.csproj",
       "packagesPath": "C:\\Users\\tp-pyaepa\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\tp-pyaepa\\source\\repos\\taskAPI\\obj\\",
+      "outputPath": "C:\\Users\\tp-pyaepa\\source\\repos\\taskApi-Task2\\taskAPI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\tp-pyaepa\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -9927,7 +9927,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.301\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.302\\RuntimeIdentifierGraph.json"
       }
     }
   }

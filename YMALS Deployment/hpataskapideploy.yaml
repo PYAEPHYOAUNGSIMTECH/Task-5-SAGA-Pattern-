@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskapiconsumer
+spec:
+  selector:
+    matchLabels:
+      run: taskapiconsumer
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: taskapiconsumer
+    spec:
+      containers:
+      - name: taskapiconsumer
+        image: pyaephoaungsimtech/taskapiconsumer
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskapiconsumer
+  labels:
+    run: taskapiconsumer
+spec:
+  ports:
+  - port: 80
+  selector:
+    run: taskapiconsumer
