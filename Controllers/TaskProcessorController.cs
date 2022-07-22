@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -18,8 +19,57 @@ namespace taskAPI.Controllers
         {
             _context = context;
         }
+        //SAGA Pattern
+        //Task Processor Service will process the task and update an “Task Status”,  of a particular “Task ID” to [COMPLETED] or [FAILED] which will be published to “task-processed” queue.
+        //will publish the task status to the task-processed
+        [HttpPost]
+        public async Task<string> PostTasks([FromBody] TaskItem taskItem)
+        {
+            //set the taskobj with the value from the frontend!
+            TaskItem taskobj = new TaskItem();
+            taskobj.taskItemID = taskItem.taskItemID;
+            taskobj.description = taskItem.description;
+            taskobj.status = taskItem.status;
+            taskobj.priority = taskItem.priority;
+
+            
+        
+
+            var factory = new ConnectionFactory()
+            {
+                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST"),
+                Port = Convert.ToInt32(Environment.GetEnvironmentVariable("RABBITMQ_PORT"))
+            };
+
+            Console.WriteLine(factory.HostName + ":" + factory.Port);
+            using (var connection = factory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.QueueDeclare(queue: "task-processed",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+                //serialize the task obj and publish it to the task-processed queue.
+                string message = JsonConvert.SerializeObject(taskobj);
+                var body = Encoding.UTF8.GetBytes(message);
+
+                channel.BasicPublish(exchange: "",
+                                     routingKey: "task-processed",
+                                     basicProperties: null,
+                                     body: body);
+            }
+
+
+            //await _context.SaveChangesAsync();
+
+            return JsonConvert.SerializeObject(taskobj);
+        }
+
+
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskItem>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<TaskItem>>> GetTasks()
         {
 
             System.Diagnostics.Debug.WriteLine("Startiing consumer");

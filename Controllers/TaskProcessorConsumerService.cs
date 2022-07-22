@@ -7,15 +7,15 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 namespace taskAPI.Controllers
 {
-    public class TaskProcessorService: BackgroundService
+    public class TaskProcessorConsumerService: BackgroundService
     {
         private readonly ILogger _logger;
         private IConnection _connection;
         private IModel _channel;
 
-        public TaskProcessorService(ILoggerFactory loggerFactory)
+        public TaskProcessorConsumerService(ILoggerFactory loggerFactory)
         {
-            this._logger = loggerFactory.CreateLogger<TaskProcessorService>();
+            this._logger = loggerFactory.CreateLogger<TaskProcessorConsumerService>();
             InitRabbitMQ();
         }
 
@@ -34,7 +34,9 @@ namespace taskAPI.Controllers
             _channel = _connection.CreateModel();
 
             //_channel.ExchangeDeclare("demo.exchange", ExchangeType.Topic);
-            _channel.QueueDeclare("tasks", true, false, false, null);
+            _channel.QueueDeclare("tasks", false, false, false, null);
+
+            _channel.QueueDeclare("task-processed", false, false, false, null); 
             // _channel.QueueBind("demo.queue.log", "demo.exchange", "demo.queue.*", null);
             // _channel.BasicQos(0, 1, false);
 

@@ -25,24 +25,26 @@ namespace taskAPI.Controllers
         }
 
         // GET: api/TaskItems
+        // Task Service will consume the "task processed" event and update the Task Status for a given Task ID 
+        // SAGA PATTERN
+        // GET method to consume from "Task-processed Queue"
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskItem>>> GetTaskItems()
+        public async Task<ActionResult<List<String>>> GetTaskItems()
         {
+            List<string> taskitems = new List<string>();
+
           if (_context.TaskItems == null)
           {
               return NotFound();
           }
             System.Diagnostics.Debug.WriteLine("Startiing consumer");
-            var factory = new ConnectionFactory()
-            {
-                HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST"),
-                Port = Convert.ToInt32(Environment.GetEnvironmentVariable("RABBITMQ_PORT"))
-            };
+            var factory = new ConnectionFactory() { HostName = "localhost" };
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(queue: "tasks",
-                                     durable: true,
+                TaskItem task = new TaskItem();
+                channel.QueueDeclare(queue: "task-processed",
+                                     durable: false,
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);
@@ -54,33 +56,27 @@ namespace taskAPI.Controllers
                     var body = ea.Body.ToArray();
                     System.Diagnostics.Debug.WriteLine(body);
                     var message = Encoding.UTF8.GetString(body);
+                    taskitems.Add(message);
                     System.Diagnostics.Debug.WriteLine(" [x] Received {0}", message);
-                    await Task.Yield();
-                    var taskItem = new TaskItem()
-                    {
-                        
-                        description = message,
-                        priority = "Urgent",
-                        status = "Started",
-                        customerID = 10
+                    //store the message from the queue to task object.
+                    task = JsonConvert.DeserializeObject<TaskItem>(message);
 
-                    };
-
-                    _context.TaskItems.Add(taskItem);
+                    //store in the in-memory database
+                    _context.Add(task);
                     await _context.SaveChangesAsync();
-                    CreatedAtAction("GetTaskItem", new { id = taskItem.taskItemID }, taskItem);
-
 
                 };
-                
-            System.Diagnostics.Debug.WriteLine("Starting consumer");
-                channel.BasicConsume(queue: "tasks",
+                System.Diagnostics.Debug.WriteLine("Starting consumer");
+                channel.BasicConsume(queue: "task-processed",
                                      autoAck: true,
                                      consumer: consumer);
 
             }
-           
-            return await _context.TaskItems.ToListAsync();
+            if(taskitems.Count == 0)
+            {
+                return NoContent();
+            }
+            return taskitems;
         }
 
         // GET: api/TaskItems/5
@@ -137,6 +133,8 @@ namespace taskAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> PostTaskItem([FromBody] TaskItem taskItem)
         {
+           
+            
           if (_context.TaskItems == null)
           {
               return Problem("Entity set 'TaskItemDBContext.TaskItems'  is null.");
